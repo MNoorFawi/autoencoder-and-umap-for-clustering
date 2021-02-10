@@ -126,8 +126,7 @@ e = Dense(256, activation = "relu")(e)
 n_bottleneck = 10
 ## defining it with a name to extract it later
 bottleneck_layer = "bottleneck_layer"
-# can also be defined with an activation function
-# also note that a linear activation function can be used instead of relu
+# can also be defined with an activation function, relu for instance
 bottleneck = Dense(n_bottleneck, name = bottleneck_layer)(e)
 ## define the decoder (in reverse)
 decoder = Dense(256, activation = "relu")(bottleneck)
