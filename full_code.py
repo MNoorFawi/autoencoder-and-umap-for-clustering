@@ -3,13 +3,6 @@ import pandas as pd
 reviews = pd.read_csv("IMDB Dataset.csv")
 reviews.head()
 
-#                                               review sentiment
-# 0  One of the other reviewers has mentioned that ...  positive
-# 1  A wonderful little production. <br /><br />The...  positive
-# 2  I thought this was a wonderful way to spend ti...  positive
-# 3  Basically there's a family where a little boy ...  negative
-# 4  Petter Mattei's "Love in the Time of Money" is...  positive
-
 reviews.shape
 # (50000, 2)
 
@@ -58,8 +51,8 @@ kmeans = KMeans(n_clusters = 3, random_state = 13).fit_predict(review_vectors)
 tsne = TSNE(n_components = 2, metric = "euclidean", random_state = 13).fit_transform(review_vectors)
 
 plt.scatter(tsne[:, 0], tsne[:, 1], c = kmeans, s = 1)
-plt.show()
-# plt.clf() # to clear it
+plt.savefig("kmeans_train.png")
+plt.clf() # to clear it
 
 from keras.models import Model
 from keras.layers import Dense, Input
@@ -74,8 +67,8 @@ review_test = sequence.pad_sequences(review_test, maxlen = max_len)
 
 ## define the encoder
 inputs_dim = review_train.shape[1]
-encoder = Input(shape = (inputs_dim, ))
-e = Dense(1024, activation = "relu")(encoder)
+enc_input = Input(shape = (inputs_dim, ))
+e = Dense(1024, activation = "relu")(enc_input)
 e = Dense(512, activation = "relu")(e)
 e = Dense(256, activation = "relu")(e)
 
@@ -84,6 +77,8 @@ e = Dense(256, activation = "relu")(e)
 n_bottleneck = 10
 ## defining it with a name to extract it later
 bottleneck_layer = "bottleneck_layer"
+# can also be defined with an activation function
+# also note that a linear activation function can be used instead of relu
 bottleneck = Dense(n_bottleneck, name = bottleneck_layer)(e)
 
 ## define the decoder (in reverse)
@@ -95,13 +90,16 @@ decoder = Dense(1024, activation = "relu")(decoder)
 ## output layer
 output = Dense(inputs_dim)(decoder)
 ## model
-model = Model(inputs = encoder, outputs = output)
+model = Model(inputs = enc_input, outputs = output)
 model.summary()
 
 ## extracting the bottleneck layer we are interested in the most
-bottleneck_encoded_layer = model.get_layer(name = bottleneck_layer).output
+## in case you haven't defined it as a layer on it own you can extract it by name 
+#bottleneck_encoded_layer = model.get_layer(name = bottleneck_layer).output
 ## the model to be used after training the autoencoder to refine the data
-encoder = Model(inputs = model.input, outputs = bottleneck_encoded_layer)
+#encoder = Model(inputs = model.input, outputs = bottleneck_encoded_layer)
+# in case you defined it as a layer as we did
+encoder = Model(inputs = model.input, outputs = bottleneck)
 
 model.compile(loss = "mse", optimizer = "adam")
 
@@ -124,8 +122,8 @@ plt.title("Training & validation loss")
 plt.xlabel("epoch")
 plt.ylabel("loss")
 plt.legend()
-plt.show()
-# plt.clf() # to clear
+plt.savefig("loss.png")
+plt.clf() # to clear
 
 ## representing the data in lower dimensional representation or embedding
 review_encoded = encoder.predict(review_train)
@@ -145,14 +143,6 @@ review_umapped = umap.UMAP(n_components = n_bottleneck / 2,
 review_umapped.shape
 # (25000, 5)
 
-from sklearn.manifold import Isomap
-import numpy as np
-np.random.seed(13)
-
-review_isomapped = Isomap(n_components = n_bottleneck / 2,
-                          n_neighbors = 50,
-                          metric = "euclidean").fit_transform(review_encoded)
-                          
 from sklearn.cluster import DBSCAN
 import numpy as np
 np.random.seed(13)
@@ -173,10 +163,15 @@ sns.scatterplot(tsne2[:, 0], tsne2[:, 1],
                 alpha = 0.9, s = 1,
                 legend = "full")
                 
+plt.savefig("dbscan.png")
+plt.clf()
+
 kmeans2 = KMeans(n_clusters = 5, random_state = 13).fit_predict(review_umapped)
 plt.scatter(tsne2[:, 0], tsne2[:, 1], c = kmeans2, s = 1) 
-plt.show()
+plt.savefig("kmeans_umap.png")
+plt.clf()
 
 kmeans3 = KMeans(n_clusters = 5, random_state = 13).fit_predict(review_encoded)
 plt.scatter(tsne2[:, 0], tsne2[:, 1], c = kmeans3, s = 1) 
-plt.show()
+plt.savefig("kmeans_enc.png")
+plt.clf()
