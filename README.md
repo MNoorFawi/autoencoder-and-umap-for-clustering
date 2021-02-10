@@ -126,6 +126,8 @@ e = Dense(256, activation = "relu")(e)
 n_bottleneck = 10
 ## defining it with a name to extract it later
 bottleneck_layer = "bottleneck_layer"
+# can also be defined with an activation function
+# also note that a linear activation function can be used instead of relu
 bottleneck = Dense(n_bottleneck, name = bottleneck_layer)(e)
 ## define the decoder (in reverse)
 decoder = Dense(256, activation = "relu")(bottleneck)
@@ -167,9 +169,12 @@ The layer we are interest in the most is the “bottleneck_layer”. So after tr
 
 ```python
 ## extracting the bottleneck layer we are interested in the most
-bottleneck_encoded_layer = model.get_layer(name = bottleneck_layer).output
+## in case you haven't defined it as a layer on it own you can extract it by name 
+#bottleneck_encoded_layer = model.get_layer(name = bottleneck_layer).output
 ## the model to be used after training the autoencoder to refine the data
-encoder = Model(inputs = model.input, outputs = bottleneck_encoded_layer)
+#encoder = Model(inputs = model.input, outputs = bottleneck_encoded_layer)
+# in case you defined it as a layer as we did
+encoder = Model(inputs = model.input, outputs = bottleneck)
 ```
 Now it is time to compile and fit our model.
 
